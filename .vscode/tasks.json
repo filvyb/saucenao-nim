@@ -1,0 +1,24 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Nim Build (Debug)",
+            "command": "nim",
+            "args": [
+                "c",
+                "--cc:clang",
+                "-d:nimTypeNames",
+                "--mm:orc",
+                "--deepcopy",
+                "--debugger:native",
+                "-d:ssl",
+                "-o:${workspaceRoot}/bin/${fileBasenameNoExtension}",
+                "${relativeFile}"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "type": "shell",
+        }
+    ]
+}

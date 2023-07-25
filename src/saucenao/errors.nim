@@ -1,5 +1,5 @@
 type
-  SauceNaoApiError* = object of Exception
+  SauceNaoApiError* = object of CatchableError
   UrlAndFileError* = object of SauceNaoApiError
   UnknownApiError* = object of SauceNaoApiError
   UnknownServerError* = object of UnknownApiError
