@@ -2,8 +2,7 @@ import std/options
 import std/json
 import std/httpclient
 import std/asyncdispatch
-import std/streams
-import std/strformat
+import std/asyncstreams
 import std/times
 
 import enums
@@ -60,7 +59,7 @@ proc processData(self: SauceNao, url="", filepath=""): MultipartData =
 
   if self.short_remaining <= 0 and (getTime() - self.last_used) < initDuration(seconds=30):
     raise newException(ShortLimitReachedError, "Short limit reached")
-  if self.long_remaining <= 0 and (getTime() - self.last_used) < initDuration(days=30):
+  if self.long_remaining <= 0 and (getTime() - self.last_used) < initDuration(hours=24):
     raise newException(LongLimitReachedError, "Long limit reached")
 
   var data = newMultipartData()
@@ -110,10 +109,13 @@ proc asyncSearch(self: SauceNao, url="", filepath=""): Future[JsonNode] {.async.
 
   client.headers = newHttpHeaders({ "Content-Type": "application/json" })
 
-  let response = client.post(sauceNaoUrl, multipart = data)
-  echo response.repr
-  #var o = %response.body
-  #result = o
+  var response = await client.post(sauceNaoUrl, multipart = data)
+
+  var o = await read(response.bodyStream)
+  if not o[0]:
+    raise newException(UnknownServerError, "Failed retrieving response")
+
+  result = %o[1]
 
 
 proc fromFile*(self: SauceNao, filepath: string): JsonNode =
@@ -123,9 +125,7 @@ proc fromUrl*(self: SauceNao, url: string): JsonNode =
   result = self.search(url=url)
 
 proc asyncFromFile*(self: SauceNao, filepath: string): Future[JsonNode] {.async.} =
-  var o = await self.asyncSearch(filepath=filepath)
-  result = o
+  result = await self.asyncSearch(filepath=filepath)
 
 proc asyncFromUrl*(self: SauceNao, url: string): Future[JsonNode] {.async.} =
-  var o = await self.asyncSearch(url=url)
-  result = o
+  result = await self.asyncSearch(url=url)
