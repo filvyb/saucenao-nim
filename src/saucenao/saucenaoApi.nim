@@ -4,22 +4,28 @@ import std/httpclient
 import std/asyncdispatch
 import std/asyncstreams
 import std/times
+import std/strutils
 
 import enums
 import errors
+import containers
+
+export enums
+export errors
+export containers
 
 let sauceNaoUrl = "https://saucenao.com/search.php"
 
 type
   SauceNao = object of RootObj
     key: Option[string]
-    testmode: int
-    dbmask: Option[int]
-    dbmaski: Option[int]
-    dbs: seq[DBs]
-    numres: int
-    dedupe: Option[Dedupe]
-    hide: Option[Hide]
+    testmode*: int
+    dbmask*: Option[int]
+    dbmaski*: Option[int]
+    dbs*: seq[DBs]
+    numres*: int
+    dedupe*: Option[Dedupe]
+    hide*: Option[Hide]
     last_used: Time
     short_remaining: int
     long_remaining: int
@@ -91,7 +97,48 @@ proc processData(self: SauceNao, url="", filepath=""): MultipartData =
 
   return data
 
-proc search(self: SauceNao, url="", filepath=""): JsonNode =
+proc parseResponse(self: var SauceNao, status_code: HttpCode, body: string): NaoResponse =
+  var s = cast[int](status_code)
+  #echo body
+  echo status_code
+  if s == 200:
+    let p = parseJson(body)
+
+    var main_header = p{"header"}
+    var status = main_header{"status"}.getInt()
+    var user_id = parseInt(main_header{"user_id"}.getStr("-6"))
+
+    if status < 0:
+      raise newException(UnknownClientError, "Unknown client error")
+    elif status > 0:
+      raise newException(UnknownServerError, "Unknown API error")
+    elif user_id < 0:
+      raise newException(UnknownServerError, "Unknown API error")
+    elif user_id == 0 and self.key.isSome:
+      raise newException(BadKeyError, "Invalid API key")
+
+    self.long_remaining = main_header{"long_remaining"}.getInt()
+    self.short_remaining = main_header{"short_remaining"}.getInt()
+    self.last_used = getTime()
+
+    result = initNaoResponse(p)
+    
+
+  elif s == 403:
+    raise newException(AnonymousAccessError, "Anonymous API usage not permited")
+  elif s == 413:
+    raise newException(BadFileSizeError, "File is too big")
+  elif s == 429:
+    let p = parseJson(body)
+    var t = p{"header"}{"message"}
+    if "Daily" in t.getStr():
+      raise newException(LongLimitReachedError, "24 hours limit reached")
+    else:
+      raise newException(ShortLimitReachedError, "30 second limit reached")
+  else:
+    raise newException(UnknownApiError, "Uknown error")
+
+proc search(self: var SauceNao, url="", filepath=""): NaoResponse =
   var data = self.processData(url, filepath)
 
   var client = newHttpClient()
@@ -99,10 +146,9 @@ proc search(self: SauceNao, url="", filepath=""): JsonNode =
   client.headers = newHttpHeaders({ "Content-Type": "application/json" })
 
   let response = client.post(sauceNaoUrl, multipart = data)
-  var o = %response.body
-  result = o
+  result = self.parseResponse(response.code(), response.body)
 
-proc asyncSearch(self: SauceNao, url="", filepath=""): Future[JsonNode] {.async.} =
+proc asyncSearch(self: var SauceNao, url="", filepath=""): Future[NaoResponse] {.async.} =
   var data = self.processData(url, filepath)
 
   var client = newAsyncHttpClient()
@@ -115,17 +161,17 @@ proc asyncSearch(self: SauceNao, url="", filepath=""): Future[JsonNode] {.async.
   if not o[0]:
     raise newException(UnknownServerError, "Failed retrieving response")
 
-  result = %o[1]
+  result = self.parseResponse(response.code(), o[1])
 
 
-proc fromFile*(self: SauceNao, filepath: string): JsonNode =
+proc fromFile*(self: var SauceNao, filepath: string): NaoResponse =
   result = self.search(filepath=filepath)
 
-proc fromUrl*(self: SauceNao, url: string): JsonNode =
+proc fromUrl*(self: var SauceNao, url: string): NaoResponse =
   result = self.search(url=url)
 
-proc asyncFromFile*(self: SauceNao, filepath: string): Future[JsonNode] {.async.} =
+proc asyncFromFile*(self: var SauceNao, filepath: string): Future[NaoResponse] {.async.} =
   result = await self.asyncSearch(filepath=filepath)
 
-proc asyncFromUrl*(self: SauceNao, url: string): Future[JsonNode] {.async.} =
+proc asyncFromUrl*(self: var SauceNao, url: string): Future[NaoResponse] {.async.} =
   result = await self.asyncSearch(url=url)

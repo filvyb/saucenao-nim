@@ -9,3 +9,4 @@ type
   LimitReachedError* = object of SauceNaoApiError
   ShortLimitReachedError* = object of LimitReachedError
   LongLimitReachedError* = object of LimitReachedError
+  AnonymousAccessError* = object of SauceNaoApiError
