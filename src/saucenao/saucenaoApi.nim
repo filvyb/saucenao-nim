@@ -59,7 +59,7 @@ proc newSauceNao*(key=none string, testmode=0, dbmask=none int, dbmaski=none int
   result.short_remaining = 4
   result.long_remaining = 100
 
-proc processData(self: SauceNao, url="", filepath=""): MultipartData =
+proc processData(self: ptr SauceNao, url="", filepath=""): MultipartData =
   if url != "" and filepath != "":
     raise newException(UrlAndFileError, "Can't search for file and URL at the same time")
 
@@ -100,7 +100,7 @@ proc processData(self: SauceNao, url="", filepath=""): MultipartData =
 
   return data
 
-proc parseResponse(self: var SauceNao, status_code: HttpCode, body: string): NaoResponse =
+proc parseResponse(self: ptr SauceNao, status_code: HttpCode, body: string): NaoResponse =
   var s = cast[int](status_code)
 
   if s == 200:
@@ -141,16 +141,17 @@ proc parseResponse(self: var SauceNao, status_code: HttpCode, body: string): Nao
     raise newException(UnknownApiError, "Uknown error")
 
 proc search(self: var SauceNao, url="", filepath=""): NaoResponse =
-  var data = self.processData(url, filepath)
+  var cap = self.addr
+  var data = cap.processData(url, filepath)
 
   var client = newHttpClient()
 
   client.headers = newHttpHeaders({ "Content-Type": "application/json" })
 
   let response = client.post(sauceNaoUrl, multipart = data)
-  result = self.parseResponse(response.code(), response.body)
+  result = cap.parseResponse(response.code(), response.body)
 
-proc asyncSearch(self: var SauceNao, url="", filepath=""): Future[NaoResponse] {.async.} =
+proc asyncSearch(self: ptr SauceNao, url="", filepath=""): Future[NaoResponse] {.async.} =
   var data = self.processData(url, filepath)
 
   var client = newAsyncHttpClient()
@@ -160,6 +161,7 @@ proc asyncSearch(self: var SauceNao, url="", filepath=""): Future[NaoResponse] {
   var response = await client.post(sauceNaoUrl, multipart = data)
 
   var o = await read(response.bodyStream)
+
   if not o[0]:
     raise newException(UnknownServerError, "Failed retrieving response")
 
@@ -172,8 +174,8 @@ proc fromFile*(self: var SauceNao, filepath: string): NaoResponse =
 proc fromUrl*(self: var SauceNao, url: string): NaoResponse =
   result = self.search(url=url)
 
-proc asyncFromFile*(self: var SauceNao, filepath: string): Future[NaoResponse] {.async.} =
+proc asyncFromFile*(self: ptr SauceNao, filepath: string): Future[NaoResponse] {.async.} =
   result = await self.asyncSearch(filepath=filepath)
 
-proc asyncFromUrl*(self: var SauceNao, url: string): Future[NaoResponse] {.async.} =
+proc asyncFromUrl*(self: ptr SauceNao, url: string): Future[NaoResponse] {.async.} =
   result = await self.asyncSearch(url=url)

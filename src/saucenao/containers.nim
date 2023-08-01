@@ -5,29 +5,15 @@ import std/options
 import enums
 
 type
-  SauceAuthor* = object
-    author*: Option[string]
-    author_name*: Option[string]
-    member_name*: Option[string]
-    pawoo_user_username*: Option[string]
-    twitter_user_handle*: Option[string]
-    company*: Option[string]
-    creator*: Option[string]
-  SauceTitle* = object
-    title*: Option[string]
-    eng_name*: Option[string]
-    material*: Option[string]
-    source*: Option[string]
-    created_at*: Option[string]
+  SauceData* = object
   Sauce* = object
     raw*: JsonNode
     similarity*: float
     thumbnail*: string
     index_id*: DBs
     index_name*: string
-    title*: Option[SauceTitle]
     urls*: seq[string]
-    author*: Option[SauceAuthor]
+    data*: SauceData
   NaoResponse* = object
     raw*: JsonNode
     user_id*: string
