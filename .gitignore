@@ -3,3 +3,6 @@ nimblecache/
 htmldocs/
 example
 bin/
+.key
+img.jpg
+search.php.json

@@ -87,6 +87,9 @@ proc processData(self: SauceNao, url="", filepath=""): MultipartData =
   if self.dedupe.isSome:
     data["dedupe"] = $ord(self.dedupe.get())
 
+  if self.hide.isSome:
+    data["hide"] = $ord(self.hide.get())
+
   if url != "":
     data["url"] = url
 
@@ -99,14 +102,13 @@ proc processData(self: SauceNao, url="", filepath=""): MultipartData =
 
 proc parseResponse(self: var SauceNao, status_code: HttpCode, body: string): NaoResponse =
   var s = cast[int](status_code)
-  #echo body
-  echo status_code
+
   if s == 200:
     let p = parseJson(body)
 
-    var main_header = p{"header"}
-    var status = main_header{"status"}.getInt()
-    var user_id = parseInt(main_header{"user_id"}.getStr("-6"))
+    var main_header = p["header"]
+    var status = main_header["status"].getInt()
+    var user_id = parseInt(main_header["user_id"].getStr("-6"))
 
     if status < 0:
       raise newException(UnknownClientError, "Unknown client error")
@@ -117,8 +119,8 @@ proc parseResponse(self: var SauceNao, status_code: HttpCode, body: string): Nao
     elif user_id == 0 and self.key.isSome:
       raise newException(BadKeyError, "Invalid API key")
 
-    self.long_remaining = main_header{"long_remaining"}.getInt()
-    self.short_remaining = main_header{"short_remaining"}.getInt()
+    self.long_remaining = main_header["long_remaining"].getInt()
+    self.short_remaining = main_header["short_remaining"].getInt()
     self.last_used = getTime()
 
     result = initNaoResponse(p)
@@ -130,7 +132,7 @@ proc parseResponse(self: var SauceNao, status_code: HttpCode, body: string): Nao
     raise newException(BadFileSizeError, "File is too big")
   elif s == 429:
     let p = parseJson(body)
-    var t = p{"header"}{"message"}
+    var t = p["header"]["message"]
     if "Daily" in t.getStr():
       raise newException(LongLimitReachedError, "24 hours limit reached")
     else:
