@@ -160,12 +160,12 @@ proc asyncSearch(self: ptr SauceNao, url="", filepath=""): Future[NaoResponse] {
 
   var response = await client.post(sauceNaoUrl, multipart = data)
 
-  var o = await read(response.bodyStream)
+  var o = await readAll(response.bodyStream)
 
-  if not o[0]:
+  if o.len == 0:
     raise newException(UnknownServerError, "Failed retrieving response")
 
-  result = self.parseResponse(response.code(), o[1])
+  result = self.parseResponse(response.code(), o)
 
 
 proc fromFile*(self: var SauceNao, filepath: string): NaoResponse =
