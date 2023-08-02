@@ -31,6 +31,7 @@ type
     long_remaining: int
   SauceNaoRef = object of ref SauceNao
 
+## Initializes and object containing your API key and your search settings
 proc initSauceNao*(key=none string, testmode=0, dbmask=none int, dbmaski=none int,
                   dbs=(@[DBs.All]), numres=8, dedupe=none Dedupe, hide=none Hide): SauceNao =
   result.key = key
@@ -80,7 +81,7 @@ proc processData(self: ptr SauceNao, url="", filepath=""): MultipartData =
   #var tmpseq: seq[int]
   #for d in self.dbs:
   #  tmpseq &= ord(d)
-  #data["dbs"] = %tmpseq
+  #data["dbs"] = $(%tmpseq)
   data["db"] = $999
   data["numres"] = $self.numres
 

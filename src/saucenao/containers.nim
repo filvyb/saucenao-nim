@@ -5,7 +5,6 @@ import std/options
 import enums
 
 type
-  SauceData* = object
   Sauce* = object
     raw*: JsonNode
     similarity*: float
@@ -13,7 +12,8 @@ type
     index_id*: DBs
     index_name*: string
     urls*: seq[string]
-    data*: SauceData
+    title*: Option[string]
+    author*: Option[string]
   NaoResponse* = object
     raw*: JsonNode
     user_id*: string
@@ -29,6 +29,37 @@ type
     results_returned*: int
     results*: seq[Sauce]
 
+proc getTitle(data: JsonNode): Option[string] =
+  if data.hasKey("title"):
+    result = some data["title"].getStr()
+  elif data.hasKey("eng_name"):
+    result = some data["eng_name"].getStr()
+  elif data.hasKey("material"):
+    result = some data["material"].getStr()
+  elif data.hasKey("source"):
+    result = some data["source"].getStr()
+  elif data.hasKey("created_at"):
+    result = some data["created_at"].getStr()
+
+proc getAuthor(data: JsonNode): Option[string] =
+  if data.hasKey("author"):
+    result = some data["author"].getStr()
+  elif data.hasKey("author_name"):
+    result = some data["author_name"].getStr()
+  elif data.hasKey("member_name"):
+    result = some data["member_name"].getStr()
+  elif data.hasKey("pawoo_user_username"):
+    result = some data["pawoo_user_username"].getStr()
+  elif data.hasKey("twitter_user_handle"):
+    result = some data["twitter_user_handle"].getStr()
+  elif data.hasKey("company"):
+    result = some data["company"].getStr()
+  elif data.hasKey("creator"):
+    if data["creator"].kind == JArray:
+      result = some data["creator"].getElems()[0].getStr()
+    else:
+      result = some data["creator"].getStr()
+    
 proc parseResults(res: JsonNode): seq[Sauce] =
   for i in res.getElems():
     var header = i["header"]
@@ -47,6 +78,9 @@ proc parseResults(res: JsonNode): seq[Sauce] =
     elif data.hasKey("getchu_id"):
       for u in data["getchu_id"].getElems():
         sauce.urls.add("http://www.getchu.com/soft.phtml?id=" & u.getStr(""))
+
+    sauce.title = getTitle(data)
+    sauce.author = getAuthor(data)
 
     result.add(sauce)
 
@@ -80,4 +114,15 @@ proc `$`*(ob: NaoResponse): string =
   result &= "minimum_similarity: " & $ob.minimum_similarity & ", "
   result &= "results_returned: " & $ob.results_returned & ", "
   result &= "results: " & $ob.results
+  result &= ")"
+
+proc `$`*(ob: Sauce): string =
+  result &= "("
+  result &= "similarity: " & $ob.similarity & ", "
+  result &= "thumbnail: " & ob.thumbnail & ", "
+  result &= "index_id: " & $ob.index_id & ", "
+  result &= "index_name: " & ob.index_name & ", "
+  result &= "urls: " & $ob.urls & ", "
+  result &= "title: " & $ob.title & ", "
+  result &= "author: " & $ob.author
   result &= ")"

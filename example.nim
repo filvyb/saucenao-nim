@@ -4,7 +4,7 @@ import std/options
 
 var nao = initSauceNao(key=some readFile(".key"))
 #var nao = initSauceNao()
-echo nao.fromFile("img.jpg")
+echo nao.fromFile("img.jpg").results[0]
 #echo nao.fromFile("img.jpg")
 #echo nao.fromFile("img.jpg")
 #echo nao.fromFile("img.jpg")
