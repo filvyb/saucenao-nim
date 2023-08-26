@@ -22,7 +22,8 @@ type
     testmode*: int
     dbmask*: Option[int]
     dbmaski*: Option[int]
-    dbs*: seq[DBs]
+    db*: Option[DBs]
+    dbs*: Option[seq[DBs]]
     numres*: int
     dedupe*: Option[Dedupe]
     hide*: Option[Hide]
@@ -33,11 +34,22 @@ type
 
 ## Initializes and object containing your API key and your search settings
 proc initSauceNao*(key=none string, testmode=0, dbmask=none int, dbmaski=none int,
-                  dbs=(@[DBs.All]), numres=8, dedupe=none Dedupe, hide=none Hide): SauceNao =
+                  db=none DBs, dbs=none seq[DBs], numres=8, dedupe=none Dedupe,
+                  hide=none Hide): SauceNao =
+  if dbmask.isSome and dbmaski.isSome:
+    raise newException(SauceNaoApiError, "Using dbmask and dbmaski is redundant")
+
+  if (dbmask.isSome or dbmaski.isSome) and db.isSome:
+    raise newException(SauceNaoApiError, "Using db and masks")
+
+  if db.isSome and dbs.isSome:
+    raise newException(SauceNaoApiError, "Using db and dbs is redundant")
+
   result.key = key
   result.testmode = testmode
   result.dbmask = dbmask
   result.dbmaski = dbmaski
+  result.db = db
   result.dbs = dbs
   result.numres = numres
   result.dedupe = dedupe
@@ -47,11 +59,22 @@ proc initSauceNao*(key=none string, testmode=0, dbmask=none int, dbmaski=none in
   result.long_remaining = 100
 
 proc newSauceNao*(key=none string, testmode=0, dbmask=none int, dbmaski=none int,
-                  dbs=(@[DBs.All]), numres=8, dedupe=none Dedupe, hide=none Hide): SauceNaoRef =
+                  db=none DBs, dbs=none seq[DBs], numres=8, dedupe=none Dedupe,
+                  hide=none Hide): SauceNaoRef =
+  if dbmask.isSome and dbmaski.isSome:
+    raise newException(SauceNaoApiError, "Using dbmask and dbmaski is redundant")
+
+  if (dbmask.isSome or dbmaski.isSome) and db.isSome:
+    raise newException(SauceNaoApiError, "Using db and masks")
+
+  if db.isSome and dbs.isSome:
+    raise newException(SauceNaoApiError, "Using db and dbs is redundant")
+
   result.key = key
   result.testmode = testmode
   result.dbmask = dbmask
   result.dbmaski = dbmaski
+  result.db = db
   result.dbs = dbs
   result.numres = numres
   result.dedupe = dedupe
@@ -59,6 +82,52 @@ proc newSauceNao*(key=none string, testmode=0, dbmask=none int, dbmaski=none int
   result.last_used = getTime()
   result.short_remaining = 4
   result.long_remaining = 100
+
+proc createUrl(self: ptr SauceNao, url="", filepath=""): (string, MultipartData) =
+  if url != "" and filepath != "":
+    raise newException(UrlAndFileError, "Can't search for file and URL at the same time")
+
+  if self.short_remaining <= 0 and (getTime() - self.last_used) < initDuration(seconds=30):
+    raise newException(ShortLimitReachedError, "Short limit reached")
+  if self.long_remaining <= 0 and (getTime() - self.last_used) < initDuration(hours=24):
+    raise newException(LongLimitReachedError, "Long limit reached")
+
+  var data = newMultipartData()
+  var urlArgs = ""
+
+  if self.key.isSome:
+    urlArgs &= "&api_key=" & self.key.get()
+
+  if self.dbmask.isSome:
+    urlArgs &= "&dbmask=" & $self.dbmask.get()
+  if self.dbmaski.isSome:
+    urlArgs &= "&dbmask=" & $self.dbmaski.get()
+
+  if self.dbs.isSome:
+    for d in self.dbs.get():
+      urlArgs &= "&dbs[]=" & $ord(d)
+  if self.db.isSome:
+    urlArgs &= "&db=" & $self.db.get()
+  urlArgs &= "&numres=" & $self.numres
+
+  if self.dedupe.isSome:
+    urlArgs &= "&dedupe=" & $ord(self.dedupe.get())
+
+  if self.hide.isSome:
+    urlArgs &= "&hide=" & $ord(self.hide.get())
+
+  if url != "":
+    urlArgs &= "&url=" & url
+
+  urlArgs &= "&output_type=" & "2"
+
+  if filepath != "":
+    data.addFiles({"file": filepath})
+
+  urlArgs[0] = '?'
+  var resUrl = sauceNaoUrl & urlArgs
+
+  return (resUrl, data)
 
 proc processData(self: ptr SauceNao, url="", filepath=""): MultipartData =
   if url != "" and filepath != "":
@@ -73,6 +142,7 @@ proc processData(self: ptr SauceNao, url="", filepath=""): MultipartData =
   
   if self.key.isSome:
     data["api_key"] = self.key.get()
+
   if self.dbmask.isSome:
     data["dbmask"] = $self.dbmask.get()
   if self.dbmaski.isSome:
@@ -82,7 +152,8 @@ proc processData(self: ptr SauceNao, url="", filepath=""): MultipartData =
   #for d in self.dbs:
   #  tmpseq &= ord(d)
   #data["dbs"] = $(%tmpseq)
-  data["db"] = $999
+  if self.db.isSome:
+    data["db"] = $self.db.get()
   data["numres"] = $self.numres
 
   if self.dedupe.isSome:
@@ -143,7 +214,11 @@ proc parseResponse(self: ptr SauceNao, status_code: HttpCode, body: string): Nao
 
 proc search(self: var SauceNao, url="", filepath=""): NaoResponse =
   var cap = self.addr
-  var data = cap.processData(url, filepath)
+  # You have to use URL?? huh
+  #var data = cap.processData(url, filepath)
+  var tmp = cap.createUrl(url, filepath)
+  var sauceNaoUrl = tmp[0]
+  var data = tmp[1]
 
   var client = newHttpClient()
 
@@ -153,7 +228,11 @@ proc search(self: var SauceNao, url="", filepath=""): NaoResponse =
   result = cap.parseResponse(response.code(), response.body)
 
 proc asyncSearch(self: ptr SauceNao, url="", filepath=""): Future[NaoResponse] {.async.} =
-  var data = self.processData(url, filepath)
+  # You have to use URL?? huh
+  #var data = self.processData(url, filepath)
+  var tmp = self.createUrl(url, filepath)
+  var sauceNaoUrl = tmp[0]
+  var data = tmp[1]
 
   var client = newAsyncHttpClient()
 

@@ -1,10 +1,11 @@
 import src/saucenao
 import std/asyncdispatch
 import std/options
+import std/strutils
 
-var nao = initSauceNao(key=some readFile(".key"))
+var nao = initSauceNao(key=some readFile(".key"), numres=2)
 #var nao = initSauceNao()
-echo nao.fromFile("img.jpg").results[0]
+echo $nao.fromFile("img.jpg")
 #echo nao.fromFile("img.jpg")
 #echo nao.fromFile("img.jpg")
 #echo nao.fromFile("img.jpg")
