@@ -107,7 +107,7 @@ proc createUrl(self: ptr SauceNao, url="", filepath=""): (string, MultipartData)
     for d in self.dbs.get():
       urlArgs &= "&dbs[]=" & $ord(d)
   if self.db.isSome:
-    urlArgs &= "&db=" & $self.db.get()
+    urlArgs &= "&db=" & $ord(self.db.get())
   urlArgs &= "&numres=" & $self.numres
 
   if self.dedupe.isSome:
@@ -153,7 +153,7 @@ proc processData(self: ptr SauceNao, url="", filepath=""): MultipartData =
   #  tmpseq &= ord(d)
   #data["dbs"] = $(%tmpseq)
   if self.db.isSome:
-    data["db"] = $self.db.get()
+    data["db"] = $ord(self.db.get())
   data["numres"] = $self.numres
 
   if self.dedupe.isSome:
@@ -219,6 +219,8 @@ proc search(self: var SauceNao, url="", filepath=""): NaoResponse =
   var tmp = cap.createUrl(url, filepath)
   var sauceNaoUrl = tmp[0]
   var data = tmp[1]
+
+  #echo sauceNaoUrl
 
   var client = newHttpClient()
 
