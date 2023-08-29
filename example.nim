@@ -3,7 +3,7 @@ import std/asyncdispatch
 import std/options
 import std/strutils
 
-var nao = initSauceNao(key=some readFile(".key"), numres=1, db=some DBs.Anime)
+var nao = initSauceNao(key=some readFile(".key"), numres=2)
 #var nao = initSauceNao()
 #echo $nao.fromFile("img.jpg")
 #echo nao.fromFile("img.jpg")

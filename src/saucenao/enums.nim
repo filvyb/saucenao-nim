@@ -11,7 +11,7 @@ type
     Yandere = (12, "0x1000")
     #Openingsmoe = (13, "0x2000")
     #IMDb = (14, "0x4000")
-    Shutterstock = (15, "0x8000")
+    #Shutterstock = (15, "0x8000")
     Fakku = (16, "0x10000")
     HMisc_NHentai = (18, "0x20000")
     TwoDMarket = (19, "0x40000")
@@ -40,7 +40,7 @@ type
     Furry_Network = (42, "0x20000000000")
     Kemono = (43, "0x40000000000")
     Skeb = (44, "0x80000000000")
-    All = (999, "")
+    #All = (999, "")
   Hide* {.pure.} = enum
     None = 0
     Known = 1
