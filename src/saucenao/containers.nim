@@ -164,107 +164,107 @@ proc parseResults(res: JsonNode): seq[Sauce] =
     sauce.title = getTitle(data)
     sauce.author = getAuthor(data)
 
-    # This should have been a switch statement urgh
-    if sauce.index_id == DBs.HMagazines:
-      sauce.part = data["part"].getStr()
-      sauce.date = some data["date"].getStr()
-    elif sauce.index_id == DBs.HGame_CG:
-      sauce.getchu_id = data["getchu_id"].getStr()
-    elif sauce.index_id in [DBs.Pixiv_Images, DBs.Pixiv_History]:
-      sauce.pixiv_id = $data["pixiv_id"].getInt()
-      sauce.pixiv_member_id = $data["member_id"].getInt()
-    elif sauce.index_id == DBs.Nico_Nico_Seiga:
-      sauce.seiga_id = $data["seiga_id"].getInt()
-      sauce.seiga_member_id = $data["member_id"].getInt()
-    elif sauce.index_id == DBs.Drawr_Images:
-      sauce.drawr_id = $data["drawr_id"].getInt()
-      sauce.drawr_member_id = $data["member_id"].getInt()
-    elif sauce.index_id == DBs.Nijie_Images:
-      sauce.nijie_id = $data["nijie_id"].getInt()
-      sauce.nijie_member_id = $data["member_id"].getInt()
-    elif sauce.index_id == DBs.MediBang:
-      sauce.medi_member_id = $data["member_id"].getInt()
-    elif sauce.index_id in [DBs.Anime, DBs.HAnime, DBs.Movies, DBs.Shows]:
-      if data.hasKey("anidb_aid"):
-        sauce.anidb_aid = some $data["anidb_aid"].getInt()
-      if data.hasKey("mal_id"):
-        sauce.mal_id = some $data["mal_id"].getInt()
-      if data.hasKey("anilist_id"):
-        sauce.anilist_id = some $data["anilist_id"].getInt()
-      if data.hasKey("imdb_id"):
-        sauce.imdb_id = some data["imdb_id"].getStr()
-      if data["part"].getStr("") != "":
-        sauce.episode = some data["part"].getStr()
-      sauce.year = data["year"].getStr()
-      sauce.est_time = data["est_time"].getStr()
-    elif sauce.index_id in [DBs.Danbooru, DBs.Gelbooru, DBs.Yandere, DBs.Konachan, DBs.SankakuChannel, DBs.AnimePicturesnet, DBs.E621net, DBs.IdolComplex]:
-      if data.hasKey("danbooru_id"):
-        sauce.booru_id = $data["danbooru_id"].getInt()
-      elif data.hasKey("yandere_id"):
-        sauce.booru_id = $data["yandere_id"].getInt()
-      elif data.hasKey("gelbooru_id"):
-        sauce.booru_id = $data["gelbooru_id"].getInt()
-      elif data.hasKey("konachan_id"):
-        sauce.booru_id = $data["konachan_id"].getInt()
-      elif data.hasKey("sankaku_id"):
-        sauce.booru_id = $data["sankaku_id"].getInt()
-      elif data.hasKey("anime-pictures_id"):
-        sauce.booru_id = $data["anime-pictures_id"].getInt()
-      elif data.hasKey("e621_id"):
-        sauce.booru_id = $data["e621_id"].getInt()
-      elif data.hasKey("idol_id"):
-        sauce.booru_id = $data["idol_id"].getInt()
-      if data["material"].getStr() != "":
-        sauce.material = some data["material"].getStr().split(", ")
-      if data["characters"].getStr() != "":
-        sauce.material = some data["characters"].getStr().split(", ")        
-    elif sauce.index_id in [DBs.Bcynet_Illust ,DBs.Bcynet_Cosplay]:
-      sauce.bcy_id = $data["bcy_id"].getInt()
-      sauce.bcy_member_id = $data["member_id"].getInt()
-      sauce.bcy_member_link_id = $data["member_link_id"].getInt()
-      sauce.bcy_type = data["bcy_type"].getStr()
-    elif sauce.index_id == DBs.PortalGraphicsnet:
-      sauce.pg_id = $data["pg_id"].getInt()
-      sauce.pg_member_id = $data["member_id"].getInt()
-    elif sauce.index_id == DBs.DeviantArt:
-      sauce.da_id = data["da_id"].getStr()
-    elif sauce.index_id == DBs.Pawoo:
-      sauce.created_at = parse(data["created_at"].getStr(), "yyyy-MM-dd'T'hh:mm:ss'.'fffzzz", utc())
-      sauce.pawoo_id = data["pawoo_id"].getStr()
-    elif sauce.index_id == DBs.Madokami:
-      sauce.mu_id = some $data["mu_id"].getInt()
-      sauce.part = data["part"].getStr()
-      if data.hasKey("type"):
-        sauce.mado_type = some data["type"].getStr()
-    elif sauce.index_id == DBs.MangaDex:
-      if data.hasKey("md_id"):
-        sauce.md_id = some data["md_id"].getStr()
-      if data.hasKey("mu_id"):
+    case sauce.index_id
+      of DBs.HMagazines:
+        sauce.part = data["part"].getStr()
+        sauce.date = some data["date"].getStr()
+      of DBs.HGame_CG:
+        sauce.getchu_id = data["getchu_id"].getStr()
+      of DBs.Pixiv_Images, DBs.Pixiv_History:
+        sauce.pixiv_id = $data["pixiv_id"].getInt()
+        sauce.pixiv_member_id = $data["member_id"].getInt()
+      of DBs.Nico_Nico_Seiga:
+        sauce.seiga_id = $data["seiga_id"].getInt()
+        sauce.seiga_member_id = $data["member_id"].getInt()
+      of DBs.Drawr_Images:
+        sauce.drawr_id = $data["drawr_id"].getInt()
+        sauce.drawr_member_id = $data["member_id"].getInt()
+      of DBs.Nijie_Images:
+        sauce.nijie_id = $data["nijie_id"].getInt()
+        sauce.nijie_member_id = $data["member_id"].getInt()
+      of DBs.MediBang:
+        sauce.medi_member_id = $data["member_id"].getInt()
+      of DBs.Anime, DBs.HAnime, DBs.Movies, DBs.Shows:
+        if data.hasKey("anidb_aid"):
+          sauce.anidb_aid = some $data["anidb_aid"].getInt()
+        if data.hasKey("mal_id"):
+          sauce.mal_id = some $data["mal_id"].getInt()
+        if data.hasKey("anilist_id"):
+          sauce.anilist_id = some $data["anilist_id"].getInt()
+        if data.hasKey("imdb_id"):
+          sauce.imdb_id = some data["imdb_id"].getStr()
+        if data["part"].getStr("") != "":
+          sauce.episode = some data["part"].getStr()
+        sauce.year = data["year"].getStr()
+        sauce.est_time = data["est_time"].getStr()
+      of DBs.Danbooru, DBs.Gelbooru, DBs.Yandere, DBs.Konachan, DBs.SankakuChannel, DBs.AnimePicturesnet, DBs.E621net, DBs.IdolComplex:
+        if data.hasKey("danbooru_id"):
+          sauce.booru_id = $data["danbooru_id"].getInt()
+        elif data.hasKey("yandere_id"):
+          sauce.booru_id = $data["yandere_id"].getInt()
+        elif data.hasKey("gelbooru_id"):
+          sauce.booru_id = $data["gelbooru_id"].getInt()
+        elif data.hasKey("konachan_id"):
+          sauce.booru_id = $data["konachan_id"].getInt()
+        elif data.hasKey("sankaku_id"):
+          sauce.booru_id = $data["sankaku_id"].getInt()
+        elif data.hasKey("anime-pictures_id"):
+          sauce.booru_id = $data["anime-pictures_id"].getInt()
+        elif data.hasKey("e621_id"):
+          sauce.booru_id = $data["e621_id"].getInt()
+        elif data.hasKey("idol_id"):
+          sauce.booru_id = $data["idol_id"].getInt()
+        if data["material"].getStr() != "":
+          sauce.material = some data["material"].getStr().split(", ")
+        if data["characters"].getStr() != "":
+          sauce.material = some data["characters"].getStr().split(", ")        
+      of DBs.Bcynet_Illust ,DBs.Bcynet_Cosplay:
+        sauce.bcy_id = $data["bcy_id"].getInt()
+        sauce.bcy_member_id = $data["member_id"].getInt()
+        sauce.bcy_member_link_id = $data["member_link_id"].getInt()
+        sauce.bcy_type = data["bcy_type"].getStr()
+      of DBs.PortalGraphicsnet:
+        sauce.pg_id = $data["pg_id"].getInt()
+        sauce.pg_member_id = $data["member_id"].getInt()
+      of DBs.DeviantArt:
+        sauce.da_id = data["da_id"].getStr()
+      of DBs.Pawoo:
+        sauce.created_at = parse(data["created_at"].getStr(), "yyyy-MM-dd'T'hh:mm:ss'.'fffzzz", utc())
+        sauce.pawoo_id = data["pawoo_id"].getStr()
+      of DBs.Madokami:
         sauce.mu_id = some $data["mu_id"].getInt()
-      if data.hasKey("mal_id"):
-        sauce.manga_mal_id = some $data["mal_id"].getInt()
-      sauce.part = data["part"].getStr()
-    elif sauce.index_id in [DBs.Fakku, DBs.HMisc_NHentai, DBs.TwoDMarket, DBs.HMisc_EHentai]:
-      sauce.source = data["source"].getStr()
-    elif sauce.index_id == DBs.Artstation:
-      sauce.as_project = data["as_project"].getStr()
-    elif sauce.index_id == DBs.FurAffinity:
-      sauce.fa_id = $data["fa_id"].getInt()
-    elif sauce.index_id == DBs.Twitter:
-      sauce.created_at_tw = parse(data["created_at"].getStr(), "yyyy-MM-dd'T'hh:mm:ss'Z'", utc())
-      sauce.tweet_id = data["tweet_id"].getStr()
-      sauce.twitter_user_id = data["twitter_user_id"].getStr()
-    elif sauce.index_id == DBs.Furry_Network:
-      sauce.fn_id = $data["fn_id"].getInt()
-      sauce.fn_type = data["fn_type"].getStr()
-    elif sauce.index_id == DBs.Kemono:
-      sauce.published = parse(data["published"].getStr(), "yyyy-MM-dd'T'hh:mm:ss'.'fffzzz", utc())
-      sauce.service = data["service"].getStr()
-      sauce.service_name = data["service_name"].getStr()
-      sauce.kemono_id = data["id"].getStr()
-      sauce.kemono_user_id = data["user_id"].getStr()
-    elif sauce.index_id == DBs.Skeb:
-      sauce.path = data["path"].getStr()
+        sauce.part = data["part"].getStr()
+        if data.hasKey("type"):
+          sauce.mado_type = some data["type"].getStr()
+      of DBs.MangaDex:
+        if data.hasKey("md_id"):
+          sauce.md_id = some data["md_id"].getStr()
+        if data.hasKey("mu_id"):
+          sauce.mu_id = some $data["mu_id"].getInt()
+        if data.hasKey("mal_id"):
+          sauce.manga_mal_id = some $data["mal_id"].getInt()
+        sauce.part = data["part"].getStr()
+      of DBs.Fakku, DBs.HMisc_NHentai, DBs.TwoDMarket, DBs.HMisc_EHentai:
+        sauce.source = data["source"].getStr()
+      of DBs.Artstation:
+        sauce.as_project = data["as_project"].getStr()
+      of DBs.FurAffinity:
+        sauce.fa_id = $data["fa_id"].getInt()
+      of DBs.Twitter:
+        sauce.created_at_tw = parse(data["created_at"].getStr(), "yyyy-MM-dd'T'hh:mm:ss'Z'", utc())
+        sauce.tweet_id = data["tweet_id"].getStr()
+        sauce.twitter_user_id = data["twitter_user_id"].getStr()
+      of DBs.Furry_Network:
+        sauce.fn_id = $data["fn_id"].getInt()
+        sauce.fn_type = data["fn_type"].getStr()
+      of DBs.Kemono:
+        sauce.published = parse(data["published"].getStr(), "yyyy-MM-dd'T'hh:mm:ss'.'fffzzz", utc())
+        sauce.service = data["service"].getStr()
+        sauce.service_name = data["service_name"].getStr()
+        sauce.kemono_id = data["id"].getStr()
+        sauce.kemono_user_id = data["user_id"].getStr()
+      of DBs.Skeb:
+        sauce.path = data["path"].getStr()
 
     result.add(sauce)
 
